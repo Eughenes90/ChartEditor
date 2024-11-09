@@ -1,6 +1,6 @@
 package com.eughenes.chartEditor.control.impl;
 
-import com.eughenes.chartEditor.base.BaseComponent;
+
 import com.eughenes.chartEditor.control.interfaces.BaseProcessor;
 import com.eughenes.chartEditor.entity.build.Chart;
 import com.eughenes.chartEditor.entity.build.Element;
@@ -16,10 +16,14 @@ import org.springframework.stereotype.Component;
  * @author Eughenes
  */
 @Component
-public class ChartProcessor extends BaseComponent implements BaseProcessor<Chart> {
+public class ChartProcessor implements BaseProcessor<Chart> {
+
+    private final RowProcessor rowProcessor;
 
     @Autowired
-    private RowProcessor rowProcessor;
+    public ChartProcessor(RowProcessor rowProcessor){
+        this.rowProcessor = rowProcessor;
+    }
 
     @Override
     public Chart process(Chart chart, Object... params) {
@@ -28,18 +32,18 @@ public class ChartProcessor extends BaseComponent implements BaseProcessor<Chart
             while (mustBeProcessed(thisSong)) {
                 if (thisSong.getHard() == null && thisSong.getExpert() != null) {
                     thisSong.setHard(new Element(SongDifficulty.HARD.getTextValue() + key, rowProcessor.process(thisSong.getExpert().getContent(), 500, 5)));
-                    logInfo("Processed Difficulty Hard");
+                    System.out.println("Processed Difficulty Hard");
                 } else if (thisSong.getMedium() == null && thisSong.getHard() != null) {
                     thisSong.setMedium(new Element(SongDifficulty.MEDIUM.getTextValue() + key, rowProcessor.process(thisSong.getHard().getContent(), 500, 4)));
-                    logInfo("Processed Difficulty Medium");
+                    System.out.println("Processed Difficulty Medium");
                 } else if (thisSong.getEasy() == null && thisSong.getMedium() != null) {
                     thisSong.setEasy(new Element(SongDifficulty.EASY.getTextValue() + key, rowProcessor.process(thisSong.getMedium().getContent(), 500, 3)));
-                    logInfo("Processed Difficulty Easy");
+                    System.out.println("Processed Difficulty Easy");
                 }
             }
             chart.getSongHashMap().put(key, thisSong);
         }
-        logInfo("Chart Processed");
+        System.out.println("Chart Processed");
         return chart;
     }
 

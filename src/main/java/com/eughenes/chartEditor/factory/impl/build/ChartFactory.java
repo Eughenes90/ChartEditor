@@ -1,6 +1,6 @@
 package com.eughenes.chartEditor.factory.impl.build;
 
-import com.eughenes.chartEditor.base.BaseComponent;
+
 import com.eughenes.chartEditor.entity.build.Chart;
 import com.eughenes.chartEditor.entity.build.Element;
 import com.eughenes.chartEditor.entity.build.Song;
@@ -22,14 +22,18 @@ import java.util.function.BiConsumer;
  * @author Eughenes
  */
 @Component
-public class ChartFactory extends BaseComponent implements BaseFactory<Chart, File> {
+public class ChartFactory implements BaseFactory<Chart, File> {
+    private final ElementFactory elementFactory;
+
     @Autowired
-    private ElementFactory elementFactory;
+    public ChartFactory(ElementFactory elementFactory) {
+        this.elementFactory = elementFactory;
+    }
 
     public Chart create(File inputFile) throws IOException {
         List<Element> elements = elementFactory.create(inputFile.toPath());
         Chart createdChart = elementsIntoChart(elements);
-        logInfo("Chart created");
+        System.out.println("Chart created");
         return createdChart;
     }
 

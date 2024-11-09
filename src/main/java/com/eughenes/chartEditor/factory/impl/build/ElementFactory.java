@@ -1,6 +1,6 @@
 package com.eughenes.chartEditor.factory.impl.build;
 
-import com.eughenes.chartEditor.base.BaseComponent;
+
 import com.eughenes.chartEditor.entity.build.Element;
 import com.eughenes.chartEditor.factory.interfaces.BaseFactory;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ import java.util.List;
  * @author Eughenes
  */
 @Component
-public class ElementFactory extends BaseComponent implements BaseFactory<List<Element>, Path> {
+public class ElementFactory implements BaseFactory<List<Element>, Path> {
 
     public List<Element> create(Path filePath) throws IOException {
         List<Element> elements = new ArrayList<>();
@@ -53,7 +53,7 @@ public class ElementFactory extends BaseComponent implements BaseFactory<List<El
         }
 
         reader.close();
-        logInfo("Parsed all elements");
+        System.out.println("Parsed all elements");
         return elements;
     }
 

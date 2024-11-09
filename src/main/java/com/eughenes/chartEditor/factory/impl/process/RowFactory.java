@@ -1,6 +1,6 @@
 package com.eughenes.chartEditor.factory.impl.process;
 
-import com.eughenes.chartEditor.base.BaseComponent;
+
 import com.eughenes.chartEditor.entity.process.Note;
 import com.eughenes.chartEditor.entity.process.Row;
 import com.eughenes.chartEditor.entity.process.enums.NoteType;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  * @author Eughenes
  */
 @Component
-public class RowFactory extends BaseComponent implements BaseFactory<Row, String> {
+public class RowFactory implements BaseFactory<Row, String> {
 
     public Row create(String line) {
         String[] fullLine = line.split("=");

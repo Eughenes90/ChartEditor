@@ -1,6 +1,6 @@
 package com.eughenes.chartEditor.control.impl;
 
-import com.eughenes.chartEditor.base.BaseComponent;
+
 import com.eughenes.chartEditor.control.interfaces.BaseProcessor;
 import com.eughenes.chartEditor.entity.process.Row;
 import com.eughenes.chartEditor.entity.process.enums.NoteType;
@@ -20,10 +20,15 @@ import java.util.Objects;
  * @author Eughenes
  */
 @Component
-public class RowProcessor extends BaseComponent implements BaseProcessor<List<String>> {
+public class RowProcessor implements BaseProcessor<List<String>> {
+
+    private final RowFactory rowFactory;
 
     @Autowired
-    private RowFactory rowFactory;
+    public RowProcessor(RowFactory rowFactory) {
+        this.rowFactory = rowFactory;
+    }
+
     public List<String> process(List<String> lines, Object... params) {
         Integer minTimeDistance = (Integer) params[0];
         Integer maximumNotes = (Integer) params[1];
