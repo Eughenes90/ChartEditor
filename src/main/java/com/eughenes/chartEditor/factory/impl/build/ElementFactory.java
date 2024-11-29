@@ -20,6 +20,7 @@ import java.util.List;
 @Component
 public class ElementFactory implements BaseFactory<List<Element>, Path> {
 
+    /*
     public List<Element> create(Path filePath) throws IOException {
         List<Element> elements = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(filePath.toString()));
@@ -51,6 +52,45 @@ public class ElementFactory implements BaseFactory<List<Element>, Path> {
         if (currentTitle != null && contentBuilder.size() > 0) {
             elements.add(new Element(currentTitle, contentBuilder));
         }
+
+        reader.close();
+        System.out.println("Parsed all elements");
+        return elements;
+    }
+
+     */
+    public List<Element> create(Path filePath) throws IOException {
+        List<Element> elements = new ArrayList<>();
+        BufferedReader reader = new BufferedReader(new FileReader(filePath.toString()));
+        String line;
+        List<String> contentBuilder = new ArrayList<>();
+        String currentTitle = null;
+
+        while ((line = reader.readLine()) != null) {
+            if (line.contains("[") && line.contains("]")) {
+                currentTitle = extractTitle(line);
+                contentBuilder = new ArrayList<>();
+            } else if (line.startsWith("{") && line.contains("}")) {
+                contentBuilder.add(extractContent(line));
+            } else if (line.startsWith("{")) {
+                contentBuilder.add(line.substring(1));//.append(" \n");
+            } else if (line.endsWith("}")) {
+                contentBuilder.add(line.substring(0, line.length() - 1));
+                elements.add(new Element(currentTitle, contentBuilder));
+                currentTitle = null;
+                contentBuilder = new ArrayList<>();
+            } else {
+                contentBuilder.add(line);//.append(" \n");
+            }
+        }
+
+        /*
+        // Add the last element if exists
+        if (currentTitle != null && contentBuilder.size() > 0) {
+            elements.add(new Element(currentTitle, contentBuilder));
+        }
+
+         */
 
         reader.close();
         System.out.println("Parsed all elements");
