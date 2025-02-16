@@ -1,7 +1,7 @@
 package com.eughenes.chartEditor;
 
-import com.eughenes.chartEditor.config.FileTransformerConfig;
-import com.eughenes.chartEditor.service.ChartService;
+import com.eughenes.chartEditor.config.ChartEditorConfig;
+import com.eughenes.chartEditor.view.ui.MainPanel;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
@@ -15,12 +15,12 @@ import java.io.IOException;
 public class ChartEditor {
     public static void main(String[] args) throws IOException {
         // Initialize Spring context
-        ApplicationContext context = new AnnotationConfigApplicationContext(FileTransformerConfig.class);
+        ApplicationContext context = new AnnotationConfigApplicationContext(ChartEditorConfig.class);
 
         // Retrieve ChartService bean from context
-        ChartService chartService = context.getBean(ChartService.class);
+        MainPanel chartService = context.getBean(MainPanel.class);
 
         // Use ChartService to proceed to execution
-        chartService.processChart();
+        chartService.createUIComponents();
     }
 }
