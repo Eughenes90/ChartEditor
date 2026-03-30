@@ -6,5 +6,5 @@ package com.eughenes.chartEditor.model.entity.process.enums;
  * @author Eughenes
  */
 public enum NoteType {
-    NORMAL, STAR
+    NORMAL, STAR, FLAG
 }
