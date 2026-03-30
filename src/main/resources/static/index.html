@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChartEditor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Reset & Variables ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #080b12;
+      --bg-card:      #0e1220;
+      --bg-card2:     #111827;
+      --border:       #1e2a3a;
+      --border-glow:  #00e5a030;
+      --green:        #00e5a0;
+      --cyan:         #00c8ff;
+      --hard:         #ff9f43;
+      --medium:       #a8e063;
+      --easy:         #5ba4f5;
+      --text:         #d4dbe8;
+      --text-dim:     #4a5568;
+      --text-mid:     #8899aa;
+      --danger:       #ff4d6d;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    /* ── Scanline overlay ──────────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.07) 2px,
+        rgba(0,0,0,0.07) 4px
+      );
+    }
+
+    /* ── Layout ────────────────────────────────────────────────────────── */
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────────── */
+    header {
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #0c1018 0%, var(--bg) 100%);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green), var(--cyan), transparent);
+      opacity: 0.6;
+    }
+
+    .logo-accent {
+      width: 4px; height: 36px;
+      background: linear-gradient(180deg, var(--green), var(--cyan));
+      border-radius: 2px;
+      box-shadow: 0 0 12px var(--green);
+      flex-shrink: 0;
+    }
+
+    .logo-text h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(90deg, var(--green), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-text p {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .header-badge {
+      margin-left: auto;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 2px;
+    }
+
+    /* ── Main grid ─────────────────────────────────────────────────────── */
+    main {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0;
+      height: calc(100vh - 73px);
+    }
+
+    /* ── Sidebar ───────────────────────────────────────────────────────── */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 0;
+      overflow-y: auto;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Drop zone ─────────────────────────────────────────────────────── */
+    .drop-zone {
+      border: 1px dashed var(--border);
+      border-radius: 4px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--green);
+      background: #00e5a006;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+    }
+
+    .drop-icon { font-size: 28px; margin-bottom: 8px; }
+
+    .drop-zone p {
+      font-size: 11px;
+      color: var(--text-mid);
+      line-height: 1.6;
+    }
+
+    .drop-zone .file-name {
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--green);
+      word-break: break-all;
+    }
+
+    /* ── Sliders ───────────────────────────────────────────────────────── */
+    .sliders-block { margin-bottom: 24px; }
+
+    .slider-row {
+      margin-bottom: 16px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .diff-tag {
+      font-size: 10px;
+      letter-spacing: 2px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 2px;
+    }
+
+    .diff-tag.hard   { color: var(--hard);   border: 1px solid var(--hard);   background: #ff9f4310; }
+    .diff-tag.medium { color: var(--medium); border: 1px solid var(--medium); background: #a8e06310; }
+    .diff-tag.easy   { color: var(--easy);   border: 1px solid var(--easy);   background: #5ba4f510; }
+
+    .slider-val {
+      font-size: 13px;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .slider-val.hard   { color: var(--hard); }
+    .slider-val.medium { color: var(--medium); }
+    .slider-val.easy   { color: var(--easy); }
+
+    .slider-note {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"].hard   { background: linear-gradient(to right, var(--hard)   0%, var(--hard)   var(--pct, 25%), #1e2a3a var(--pct, 25%), #1e2a3a 100%); }
+    input[type="range"].medium { background: linear-gradient(to right, var(--medium) 0%, var(--medium) var(--pct, 50%), #1e2a3a var(--pct, 50%), #1e2a3a 100%); }
+    input[type="range"].easy   { background: linear-gradient(to right, var(--easy)   0%, var(--easy)   var(--pct, 67%), #1e2a3a var(--pct, 67%), #1e2a3a 100%); }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid currentColor;
+      box-shadow: 0 0 8px currentColor;
+      transition: transform 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+    /* ── Buttons ───────────────────────────────────────────────────────── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 11px 16px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-process {
+      color: var(--green);
+      border-color: var(--green);
+      background: #00e5a010;
+      margin-bottom: 10px;
+    }
+
+    .btn-process:not(:disabled):hover {
+      background: var(--green);
+      color: var(--bg);
+      box-shadow: 0 0 20px #00e5a060;
+    }
+
+    .btn-download {
+      color: var(--cyan);
+      border-color: var(--cyan);
+      background: #00c8ff10;
+    }
+
+    .btn-download:not(:disabled):hover {
+      background: var(--cyan);
+      color: var(--bg);
+      box-shadow: 0 0 20px #00c8ff60;
+    }
+
+    /* ── Progress bar ──────────────────────────────────────────────────── */
+    .progress-wrap {
+      margin-top: auto;
+      padding-top: 20px;
+    }
+
+    .progress-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--green), var(--cyan));
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .status-msg {
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      min-height: 14px;
+    }
+
+    .status-msg.ok    { color: var(--green); }
+    .status-msg.err   { color: var(--danger); }
+
+    /* ── Preview panel ─────────────────────────────────────────────────── */
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .preview-header {
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--bg-card2);
+      flex-shrink: 0;
+    }
+
+    .preview-header h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--text-mid);
+    }
+
+    .preview-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 16px;
+    }
+
+    .stat-pill {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 10px;
+    }
+
+    .stat-pill span { color: var(--green); }
+
+    .preview-body {
+      flex: 1;
+      overflow: auto;
+      padding: 20px 24px;
+      position: relative;
+    }
+
+    .empty-state {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--text-dim);
+    }
+
+    .empty-state .big-icon { font-size: 48px; opacity: 0.3; }
+
+    .empty-state p {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+
+    /* Animated grid background for empty state */
+    .empty-state::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.3;
+    }
+
+    pre#preview-content {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-mid);
+      white-space: pre-wrap;
+      word-break: break-all;
+      display: none;
+    }
+
+    /* Syntax tinting for .chart content */
+    pre#preview-content .line-section  { color: var(--cyan); font-weight: bold; }
+    pre#preview-content .line-note     { color: var(--text); }
+    pre#preview-content .line-bpm      { color: var(--hard); }
+    pre#preview-content .line-bracket  { color: var(--green); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    /* ── Animations ────────────────────────────────────────────────────── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 8px var(--green); }
+      50%       { box-shadow: 0 0 20px var(--green), 0 0 40px #00e5a040; }
+    }
+
+    .btn-process:not(:disabled) { animation: pulse-glow 2.5s ease infinite; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header>
+    <div class="logo-accent"></div>
+    <div class="logo-text">
+      <h1>CHART EDITOR</h1>
+      <p>Clone Hero · Difficulty Generator</p>
+    </div>
+    <div class="header-badge">v1.0 // LOCAL</div>
+  </header>
+
+  <!-- ── Main ───────────────────────────────────────────────────────── -->
+  <main>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+      <div class="section-label">Source File</div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".chart"/>
+        <div class="drop-icon">◈</div>
+        <p>Drop your <strong>.chart</strong> file here<br/>or click to browse</p>
+        <div class="file-name" id="fileName"></div>
+      </div>
+
+      <!-- Sliders -->
+      <div class="section-label">Difficulty Parameters</div>
+      <div class="sliders-block">
+
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="diff-tag hard">HARD</span>
+            <span class="slider-val hard" id="hardVal">0.50</span>
+          </div>
+          <p class="slider-note">Min gap between notes (beats)</p>
+          <input type="range" class="hard" id="hardSlider" min="0.25" max="3" step="0.25" value="0.5"/>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="diff-tag medium">MEDIUM</span>
+            <span class="slider-val medium" id="mediumVal">1.00</span>
+          </div>
+          <p class="slider-note">Min gap between notes (beats)</p>
+          <input type="range" class="medium" id="mediumSlider" min="0.25" max="3" step="0.25" value="1"/>
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="diff-tag easy">EASY</span>
+            <span class="slider-val easy" id="easyVal">2.00</span>
+          </div>
+          <p class="slider-note">Min gap between notes (beats)</p>
+          <input type="range" class="easy" id="easySlider" min="0.25" max="4" step="0.25" value="2"/>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <button class="btn btn-process" id="processBtn" disabled>⚡ Generate Difficulties</button>
+      <button class="btn btn-download" id="downloadBtn" disabled>↓ Download Chart</button>
+
+      <!-- Progress -->
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Processing</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        <div class="status-msg" id="statusMsg"></div>
+      </div>
+
+    </aside>
+
+    <!-- Preview panel -->
+    <section class="preview-panel">
+      <div class="preview-header">
+        <h2>OUTPUT PREVIEW</h2>
+        <div class="preview-stats">
+          <div class="stat-pill">Lines: <span id="statLines">—</span></div>
+          <div class="stat-pill">File: <span id="statFile">—</span></div>
+        </div>
+      </div>
+      <div class="preview-body">
+        <div class="empty-state" id="emptyState">
+          <div class="big-icon">♩</div>
+          <p>Load a file and generate difficulties</p>
+        </div>
+        <pre id="preview-content"></pre>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // ── State ───────────────────────────────────────────────────────────────
+  let selectedFile = null;
+
+  // ── Elements ────────────────────────────────────────────────────────────
+  const fileInput   = document.getElementById('fileInput');
+  const dropZone    = document.getElementById('dropZone');
+  const fileNameEl  = document.getElementById('fileName');
+  const processBtn  = document.getElementById('processBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const progressFill= document.getElementById('progressFill');
+  const progressPct = document.getElementById('progressPct');
+  const statusMsg   = document.getElementById('statusMsg');
+  const previewEl   = document.getElementById('preview-content');
+  const emptyState  = document.getElementById('emptyState');
+  const statLines   = document.getElementById('statLines');
+  const statFile    = document.getElementById('statFile');
+
+  const hardSlider   = document.getElementById('hardSlider');
+  const mediumSlider = document.getElementById('mediumSlider');
+  const easySlider   = document.getElementById('easySlider');
+  const hardVal      = document.getElementById('hardVal');
+  const mediumVal    = document.getElementById('mediumVal');
+  const easyVal      = document.getElementById('easyVal');
+
+  // ── Slider sync ─────────────────────────────────────────────────────────
+  function syncSlider(slider, label) {
+    const min = parseFloat(slider.min);
+    const max = parseFloat(slider.max);
+    const val = parseFloat(slider.value);
+    const pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
+    slider.style.setProperty('--pct', pct);
+    label.textContent = val.toFixed(2);
+  }
+
+  hardSlider.addEventListener('input',   () => syncSlider(hardSlider,   hardVal));
+  mediumSlider.addEventListener('input', () => syncSlider(mediumSlider, mediumVal));
+  easySlider.addEventListener('input',   () => syncSlider(easySlider,   easyVal));
+
+  // Init
+  syncSlider(hardSlider, hardVal);
+  syncSlider(mediumSlider, mediumVal);
+  syncSlider(easySlider, easyVal);
+
+  // ── File selection ───────────────────────────────────────────────────────
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.name.endsWith('.chart')) setFile(f);
+    else setStatus('Only .chart files are supported', 'err');
+  });
+
+  function setFile(file) {
+    selectedFile = file;
+    fileNameEl.textContent = '▶ ' + file.name;
+    processBtn.disabled = false;
+    downloadBtn.disabled = true;
+    setProgress(0);
+    setStatus('File ready — click Generate', '');
+    previewEl.style.display = 'none';
+    emptyState.style.display = 'flex';
+    statLines.textContent = '—';
+    statFile.textContent = file.name;
+  }
+
+  // ── Process ──────────────────────────────────────────────────────────────
+  processBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    processBtn.disabled = true;
+    downloadBtn.disabled = true;
+    setProgress(10);
+    setStatus('Uploading file...', '');
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('hardBeats',   hardSlider.value);
+    formData.append('mediumBeats', mediumSlider.value);
+    formData.append('easyBeats',   easySlider.value);
+
+    setProgress(30);
+    setStatus('Processing chart...', '');
+
+    try {
+      const res = await fetch('/api/preview', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      setProgress(80);
+
+      if (data.error) {
+        setStatus('Error: ' + data.error, 'err');
+        setProgress(0);
+        processBtn.disabled = false;
+        return;
+      }
+
+      setProgress(100);
+      setStatus('Done — ' + data.totalLines + ' lines generated', 'ok');
+
+      statLines.textContent = data.totalLines;
+      renderPreview(data.preview);
+
+      downloadBtn.disabled = false;
+      processBtn.disabled = false;
+
+    } catch (err) {
+      setStatus('Connection error: ' + err.message, 'err');
+      setProgress(0);
+      processBtn.disabled = false;
+    }
+  });
+
+  // ── Download ─────────────────────────────────────────────────────────────
+  downloadBtn.addEventListener('click', () => {
+    window.location.href = '/api/download';
+  });
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function setProgress(pct) {
+    progressFill.style.width = pct + '%';
+    progressPct.textContent  = pct + '%';
+  }
+
+  function setStatus(msg, type) {
+    statusMsg.textContent  = msg;
+    statusMsg.className    = 'status-msg' + (type ? ' ' + type : '');
+  }
+
+  function renderPreview(text) {
+    // Basic syntax tinting for .chart format
+    const lines = text.split('\n').map(line => {
+      const t = line.trim();
+      if (t.startsWith('[') && t.endsWith(']'))
+        return `<span class="line-section">${esc(line)}</span>`;
+      if (t === '{' || t === '}')
+        return `<span class="line-bracket">${esc(line)}</span>`;
+      if (t.includes('= B '))
+        return `<span class="line-bpm">${esc(line)}</span>`;
+      if (t.includes('= N '))
+        return `<span class="line-note">${esc(line)}</span>`;
+      return esc(line);
+    });
+
+    previewEl.innerHTML = lines.join('\n');
+    previewEl.style.display = 'block';
+    previewEl.classList.add('fade-in');
+    emptyState.style.display = 'none';
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>

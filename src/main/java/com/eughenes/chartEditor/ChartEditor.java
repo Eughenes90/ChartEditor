@@ -1,26 +1,16 @@
 package com.eughenes.chartEditor;
 
-import com.eughenes.chartEditor.config.ChartEditorConfig;
-import com.eughenes.chartEditor.view.ui.MainPanel;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
-import java.io.IOException;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Main method to start the application
+ * Entry point — starts embedded Tomcat and serves the web UI
  *
  * @author Eughenes
  */
+@SpringBootApplication
 public class ChartEditor {
-    public static void main(String[] args) throws IOException {
-        // Initialize Spring context
-        ApplicationContext context = new AnnotationConfigApplicationContext(ChartEditorConfig.class);
-
-        // Retrieve ChartService bean from context
-        MainPanel chartService = context.getBean(MainPanel.class);
-
-        // Use ChartService to proceed to execution
-        chartService.createUIComponents();
+    public static void main(String[] args) {
+        SpringApplication.run(ChartEditor.class, args);
     }
 }

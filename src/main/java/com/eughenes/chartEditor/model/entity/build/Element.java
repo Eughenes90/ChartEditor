@@ -41,6 +41,9 @@ public class Element {
         print.add("{");
         for (String c : content) {
             if (!c.isBlank()) {
+                if(c.contains("Charter")){
+                    c = c.replaceAll("\"[^\"]*\"", "\"ChartEditor\"");
+                }
                 print.add(c);
             }
         }
